@@ -37,7 +37,7 @@ def saveConfig():
     f.write(player)
 
 def status(str):
-  xchat.prnt(u"[%s] %s" % (player, str))
+  xchat.prnt("[%s] %s" % (player, str))
 
 # Pass in milliseconds, get (minutes, seconds)
 def parseSongPosition(time):
@@ -82,9 +82,9 @@ def getSongInfo():
     
     #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
-    title = data["xesam:title"]
-    album = data["xesam:album"]
-    artist = data["xesam:artist"][0]
+    title = data["xesam:title"].encode('utf-8')
+    album = data["xesam:album"].encode('utf-8')
+    artist = data["xesam:artist"][0].encode('utf-8')
     pos = getProperty("org.mpris.MediaPlayer2.Player", "Position")
     pos = formatTime(parseSongPosition(pos))
     length = formatTime(parseSongPosition(data["mpris:length"]))
@@ -110,7 +110,7 @@ def mprisNp(word, word_eol, userdata):
   if isPlayerSpecified():
     info = getSongInfo()
     if not info == False:
-      xchat.command(u"ME is listening to %s - %s [%s] [%s/%s]" % info)
+      xchat.command("ME is listening to %s - %s [%s] [%s/%s]" % info)
     else:
       xchat.prnt("Error in getSongInfo()")
   return xchat.EAT_ALL
@@ -123,14 +123,14 @@ def mprisPlayer(word, word_eol, userdata):
     if not isPlayerSpecified():
       pass
     elif oldplayer != '' and oldplayer != player:
-      xchat.prnt(u"Media player changed from \"%s\" to \"%s\"" % (oldplayer, player))
+      xchat.prnt("Media player changed from \"%s\" to \"%s\"" % (oldplayer, player))
     else:
-      xchat.prnt(u"Media player set to \"%s\"" % player)
+      xchat.prnt("Media player set to \"%s\"" % player)
     saveConfig()
     return xchat.EAT_ALL
   else:
     pass
-  xchat.prnt(u"USAGE: %s <player name>, set default meda player." % word[0])
+  xchat.prnt("USAGE: %s <player name>, set default meda player." % word[0])
   return xchat.EAT_ALL
 
 def mprisPlay(word, word_eol, userdata):
@@ -187,7 +187,7 @@ xchat.prnt("MPRIS2 now playing script initialized")
 
 if isConfigured():
   loadConfig()
-  xchat.prnt(u"Current media player is %s" % player)
+  xchat.prnt("Current media player is %s" % player)
 
 xchat.prnt("Use /player <player name> to specify the media player you are using.")
 xchat.prnt("Use /np to send information on the current song to the active channel.")
