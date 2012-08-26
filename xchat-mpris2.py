@@ -82,6 +82,10 @@ def getSongInfo():
     
     #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
+    
+    if not ("xesam:title" in data and "xesam:album" in data and "xesam:artist" in data):
+      return (True, "Player is stopped.", False, False, False)
+    
     title = data["xesam:title"].encode('utf-8')
     album = data["xesam:album"].encode('utf-8')
     artist = data["xesam:artist"][0].encode('utf-8')
@@ -92,8 +96,12 @@ def getSongInfo():
     return (artist, title, album, pos, length)
     #else:
     #  return 0
-  except dbus.exceptions.DBusException:
-    return (False, False, False, False, False)
+  except dbus.exceptions.DBusException as e:
+    #return (False, False, False, False, False)
+    if e.startswith("org.freedesktop.DBus.Error.ServiceUnknown"):
+      return (True, "Player is not running.", False, False, False)
+    else:
+      return (True, "DBusException: {0}".format(e), False, False, False)
 
 def getPlayerVersion():
   try:
@@ -109,10 +117,14 @@ def mprisPlayerVersion(word, word_eol, userdata):
 def mprisNp(word, word_eol, userdata):
   if isPlayerSpecified():
     info = getSongInfo()
-    if not info == False:
-      xchat.command("ME is listening to %s - %s [%s] [%s/%s]" % info)
-    else:
+    if info == (False, False, False, False, False):
       xchat.prnt("Error in getSongInfo()")
+    elif info[0] == True:
+      # Print out the second item, if the first is True
+      xchat.prnt(info[1])
+    else:
+      xchat.command("ME is listening to %s - %s [%s] [%s/%s]" % info)
+  
   return xchat.EAT_ALL
 
 def mprisPlayer(word, word_eol, userdata):
