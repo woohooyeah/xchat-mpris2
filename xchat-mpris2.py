@@ -83,8 +83,13 @@ def getSongInfo():
     #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
     title = data["xesam:title"].encode('utf-8')
-    album = data["xesam:album"].encode('utf-8')
-    artist = data["xesam:artist"][0].encode('utf-8')
+    album = ""
+    if "xesam:album" in data:
+      album = data["xesam:album"].encode('utf-8')
+    
+    artist = ""
+    if "xesam:artist" in data:
+      artist = data["xesam:artist"][0].encode('utf-8')
     pos = getProperty("org.mpris.MediaPlayer2.Player", "Position")
     pos = formatTime(parseSongPosition(pos))
     length = formatTime(parseSongPosition(data["mpris:length"]))
