@@ -74,6 +74,27 @@ def getProperty(interface, prop):
   except dbus.exceptions.DBusException:
     return False
 
+def getSongURLInfo():
+  try:
+    remote_object = bus.get_object("org.mpris.MediaPlayer2.%s" % (player), "/org/mpris/MediaPlayer2")
+    #iface = dbus.Interface(remote_object, "org.freedesktop.MediaPlayer")
+    iface = dbus.Interface(remote_object, "org.freedesktop.DBus.Properties")
+
+    #if iface.IsPlaying():
+    data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
+
+    url = ""
+    if "xesam:url" in data:
+      url = data["xesam:url"].encode('utf-8')
+    else:
+      url = ""
+
+    return url
+    #else:
+    #  return 0 
+  except dbus.exceptions.DBusException:
+    return False
+
 def getSongInfo():
   try:
     remote_object = bus.get_object("org.mpris.MediaPlayer2.%s" % (player), "/org/mpris/MediaPlayer2")
@@ -101,6 +122,7 @@ def getSongInfo():
     length = ""
     if "mpris:length" in data:
       length = formatTime(parseSongPosition(data["mpris:length"]))
+    #or we just assume it's a stream, because it _is_ playing
     else:
       length = "STREAM"
     
@@ -119,6 +141,15 @@ def getPlayerVersion():
 def mprisPlayerVersion(word, word_eol, userdata):
   if isPlayerSpecified():
     xchat.prnt(str(getPlayerVersion()))
+  return xchat.EAT_ALL
+
+def mprisURLInfo(word, word_eol, userdata):
+  if isPlayerSpecified():
+    urlinfo = getSongURLInfo()   
+    if not urlinfo == False:
+      xchat.command("ME is currently streaming from URL: %s" % urlinfo)
+    else:
+      xchat.prnt("Error in getSongURLInfo()")
   return xchat.EAT_ALL
 
 def mprisNp(word, word_eol, userdata):
@@ -215,3 +246,4 @@ xchat.hook_command("PLAY",   mprisPlay,   help="Usage: PLAY, play the music")
 xchat.hook_command("PAUSE",  mprisPause,  help="Usage: PAUSE, pause the music")
 xchat.hook_command("STOP",   mprisStop,   help="Usage: STOP, hammer time!")
 xchat.hook_command("PLAYERVERSION", mprisPlayerVersion, help="Usage: PLAYERVERSION, version of the media player you are using")
+xchat.hook_command("URLINFO", mprisURLInfo,   help="Usage: URLINFO, where the streaming audio comes from")
