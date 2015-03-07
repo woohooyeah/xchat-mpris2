@@ -90,9 +90,19 @@ def getSongInfo():
     artist = ""
     if "xesam:artist" in data:
       artist = data["xesam:artist"][0].encode('utf-8')
+
+    pos = ""
     pos = getProperty("org.mpris.MediaPlayer2.Player", "Position")
-    pos = formatTime(parseSongPosition(pos))
-    length = formatTime(parseSongPosition(data["mpris:length"]))
+    if not pos == 0:
+      pos = formatTime(parseSongPosition(pos))
+    else:
+      pos = formatTime(0)
+
+    length = ""
+    if "mpris:length" in data:
+      length = formatTime(parseSongPosition(data["mpris:length"]))
+    else:
+      length = "STREAM"
     
     return (artist, title, album, pos, length)
     #else:
