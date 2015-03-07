@@ -17,7 +17,7 @@
 * /PLAYERVERSION
    <p>Print version of the media player you are using</p>
 * /URLINFO
-   <p>Print an URL where any streaming audio comes from</p>
+   <p>Print URL of streaming audio</p>
 
 ## Setup ##
 
