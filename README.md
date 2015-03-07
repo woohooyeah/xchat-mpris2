@@ -16,6 +16,8 @@
    <p>Stop music.</p>
 * /PLAYERVERSION
    <p>Print version of the media player you are using</p>
+* /URLINFO
+   <p>Print an URL where any streaming audio comes from</p>
 
 ## Setup ##
 
