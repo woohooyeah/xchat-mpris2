@@ -1,8 +1,8 @@
 import xchat, dbus, os, inspect
 
 __module_name__ = "xchat-mpris2" 
-__module_version__ = "0.1"
-__module_description__ = "Fetches information from MPRIS2-compliant music players" 
+__module_version__ = "0.21"
+__module_description__ = "Fetches information from MRPIS- and MPRIS2-compliant music players" 
 
 conf_file = 'xchat-mpris-player2.txt'
 
@@ -100,6 +100,10 @@ def getSongInfo():
     remote_object = bus.get_object("org.mpris.MediaPlayer2.%s" % (player), "/org/mpris/MediaPlayer2")
     #iface = dbus.Interface(remote_object, "org.freedesktop.MediaPlayer")
     iface = dbus.Interface(remote_object, "org.freedesktop.DBus.Properties")
+
+    remote_object_mpris = bus.get_object("org.mpris.%s" % (player), "/Player")
+    iface_mpris = dbus.Interface(remote_object_mpris, "org.freedesktop.MediaPlayer")
+    data_mpris = iface_mpris.GetMetadata()
     
     #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
@@ -125,12 +129,21 @@ def getSongInfo():
     #or we just assume it's a stream, because it _is_ playing
     else:
       length = "STREAM"
-    
-    return (artist, title, album, pos, length)
+
+    bitrate = ""
+    if "audio-bitrate" in data_mpris:
+      bitrate = unicode(data_mpris["audio-bitrate"]).encode('utf-8')
+
+    samplingrate = ""
+    if "audio-samplerate" in data_mpris:
+      samplingrate = unicode(data_mpris["audio-samplerate"]).encode('utf-8')
+
+    # Some nice colors:
+    return ("\002" + artist, title + "\002", "\002\00304<\003\002" + album + "\002\00304>\003\002", "\002\00310(\003\002" + bitrate + " Kbps" + "\002\00310)\003\002", "\002\00308<\003\002" + samplingrate + " Hz" + "\002\00308>\003\002", "\002\00307[\003\002" + pos + "\002\00307/\003\002", length + "\002\00307]\003\002")
     #else:
     #  return 0
   except dbus.exceptions.DBusException:
-    return (False, False, False, False, False)
+    return (False, False, False, False, False, False, False)
 
 def getPlayerVersion():
   try:
@@ -156,7 +169,7 @@ def mprisNp(word, word_eol, userdata):
   if isPlayerSpecified():
     info = getSongInfo()
     if not info == False:
-      xchat.command("ME is listening to %s - %s [%s] [%s/%s]" % info)
+      xchat.command("ME is now playing: %s - %s %s %s %s %s%s" % info)
     else:
       xchat.prnt("Error in getSongInfo()")
   return xchat.EAT_ALL
