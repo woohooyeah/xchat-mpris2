@@ -4,7 +4,7 @@
 import xchat, dbus, os, inspect
 
 __module_name__ = "xchat-mpris2" 
-__module_version__ = "0.22"
+__module_version__ = "0.23"
 __module_description__ = "Fetches information from MRPIS- and MPRIS2-compliant music players" 
 
 conf_file = 'xchat-mpris-player2.txt'
@@ -110,14 +110,30 @@ def getSongInfo():
     
     #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
-    title = data["xesam:title"]
-    album = ""
-    if "xesam:album" in data:
-      album = data["xesam:album"]
-    
+
     artist = ""
     if "xesam:artist" in data:
       artist = data["xesam:artist"][0]
+
+    title = ""
+    if "xesam:title" in data:
+      title = data["xesam:title"]
+
+    album = ""
+    if "xesam:album" in data:
+      album = data["xesam:album"]
+
+    year = ""
+    if "year" in data_mpris:
+      year = data_mpris["year"]
+
+    bitrate = ""
+    if "audio-bitrate" in data_mpris:
+      bitrate = data_mpris["audio-bitrate"]
+
+    samplingrate = ""
+    if "audio-samplerate" in data_mpris:
+      samplingrate = data_mpris["audio-samplerate"]
 
     pos = ""
     pos = getProperty("org.mpris.MediaPlayer2.Player", "Position")
@@ -133,20 +149,44 @@ def getSongInfo():
     else:
       length = "STREAM"
 
-    bitrate = ""
-    if "audio-bitrate" in data_mpris:
-      bitrate = data_mpris["audio-bitrate"]
+    if artist:
+      s_artist = "\002" + str(artist) + "\002"
+    else:
+      s_artist = ""
 
-    samplingrate = ""
-    if "audio-samplerate" in data_mpris:
-      samplingrate = data_mpris["audio-samplerate"]
+    if title:
+      s_title = "\002" + str(title) + "\002"
+    else:
+      s_title = ""
+
+    if album:
+      s_album = "\002\00304<\003\002" + str(album) + "\002\00304>\003\002 "
+    else:
+      s_album = ""
+
+    if year:
+      s_year = "\002\00307{\003\002" + str(year) + "\002\00307}\003\002 "
+    else:
+      s_year = ""
+
+    if bitrate:
+      s_bitrate = "\002\00308(\003\002" + str(bitrate) + "kbps" + "\002\00308)\003\002 "
+    else:
+      s_bitrate = ""
+
+    if samplingrate:
+      sr_conv = round(float(samplingrate / 1000), 1)
+      s_samplingrate = "\002\00310<\003\002" + str(sr_conv) + "kHz" + "\002\00310>\003\002 "
+    else:
+      s_samplingrate = ""
 
     # Some nice colors:
-    return ("\002" + str(artist), str(title) + "\002", "\002\00304<\003\002" + str(album) + "\002\00304>\003\002", "\002\00310(\003\002" + str(bitrate) + " Kbps" + "\002\00310)\003\002", "\002\00308<\003\002" + str(samplingrate) + " Hz" + "\002\00308>\003\002", "\002\00307[\003\002" + str(pos) + "\002\00307/\003\002", str(length) + "\002\00307]\003\002")
+    return (s_artist, s_title, s_album, s_year, s_bitrate, s_samplingrate,
+      "\002\00306[\003\002" + str(pos) + "\002\00306/\003\002", str(length) + "\002\00306]\003\002")
     #else:
     #  return 0
   except dbus.exceptions.DBusException:
-    return (False, False, False, False, False, False, False)
+    return (False, False, False, False, False, False, False, False)
 
 def getPlayerVersion():
   try:
@@ -172,7 +212,7 @@ def mprisNp(word, word_eol, userdata):
   if isPlayerSpecified():
     info = getSongInfo()
     if not info == False:
-      xchat.command("ME is now playing: %s - %s %s %s %s %s%s" % info)
+      xchat.command("ME is now playing: %s - %s %s%s%s%s%s%s" % info)
     else:
       xchat.prnt("Error in getSongInfo()")
   return xchat.EAT_ALL
