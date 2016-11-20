@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+#
+
 import xchat, dbus, os, inspect
 
 __module_name__ = "xchat-mpris2" 
-__module_version__ = "0.21"
+__module_version__ = "0.22"
 __module_description__ = "Fetches information from MRPIS- and MPRIS2-compliant music players" 
 
 conf_file = 'xchat-mpris-player2.txt'
@@ -49,7 +52,7 @@ def getMinutesAndSeconds(seconds):
 
 # Pass in both minutes and seconds
 def formatTime(time):
-  if time > 0:
+  if time:
     return "%d:%02d" % time
   else:
     return "0:00"
@@ -85,7 +88,7 @@ def getSongURLInfo():
 
     url = ""
     if "xesam:url" in data:
-      url = data["xesam:url"].encode('utf-8')
+      url = data["xesam:url"]
     else:
       url = ""
 
@@ -107,14 +110,14 @@ def getSongInfo():
     
     #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
-    title = data["xesam:title"].encode('utf-8')
+    title = data["xesam:title"]
     album = ""
     if "xesam:album" in data:
-      album = data["xesam:album"].encode('utf-8')
+      album = data["xesam:album"]
     
     artist = ""
     if "xesam:artist" in data:
-      artist = data["xesam:artist"][0].encode('utf-8')
+      artist = data["xesam:artist"][0]
 
     pos = ""
     pos = getProperty("org.mpris.MediaPlayer2.Player", "Position")
@@ -132,14 +135,14 @@ def getSongInfo():
 
     bitrate = ""
     if "audio-bitrate" in data_mpris:
-      bitrate = unicode(data_mpris["audio-bitrate"]).encode('utf-8')
+      bitrate = data_mpris["audio-bitrate"]
 
     samplingrate = ""
     if "audio-samplerate" in data_mpris:
-      samplingrate = unicode(data_mpris["audio-samplerate"]).encode('utf-8')
+      samplingrate = data_mpris["audio-samplerate"]
 
     # Some nice colors:
-    return ("\002" + artist, title + "\002", "\002\00304<\003\002" + album + "\002\00304>\003\002", "\002\00310(\003\002" + bitrate + " Kbps" + "\002\00310)\003\002", "\002\00308<\003\002" + samplingrate + " Hz" + "\002\00308>\003\002", "\002\00307[\003\002" + pos + "\002\00307/\003\002", length + "\002\00307]\003\002")
+    return ("\002" + str(artist), str(title) + "\002", "\002\00304<\003\002" + str(album) + "\002\00304>\003\002", "\002\00310(\003\002" + str(bitrate) + " Kbps" + "\002\00310)\003\002", "\002\00308<\003\002" + str(samplingrate) + " Hz" + "\002\00308>\003\002", "\002\00307[\003\002" + str(pos) + "\002\00307/\003\002", str(length) + "\002\00307]\003\002")
     #else:
     #  return 0
   except dbus.exceptions.DBusException:
@@ -161,7 +164,7 @@ def mprisURLInfo(word, word_eol, userdata):
     urlinfo = getSongURLInfo()   
     if not urlinfo == False:
       xchat.command("ME is currently streaming from URL: %s" % urlinfo)
-    else:
+7    else:
       xchat.prnt("Error in getSongURLInfo()")
   return xchat.EAT_ALL
 
