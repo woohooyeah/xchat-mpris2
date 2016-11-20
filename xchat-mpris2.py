@@ -164,7 +164,7 @@ def mprisURLInfo(word, word_eol, userdata):
     urlinfo = getSongURLInfo()   
     if not urlinfo == False:
       xchat.command("ME is currently streaming from URL: %s" % urlinfo)
-7    else:
+    else:
       xchat.prnt("Error in getSongURLInfo()")
   return xchat.EAT_ALL
 
