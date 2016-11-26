@@ -4,40 +4,18 @@
 import xchat, dbus, os, inspect
 
 __module_name__ = "xchat-mpris2" 
-__module_version__ = "0.23"
+__module_version__ = "0.24"
 __module_description__ = "Fetches information from MRPIS- and MPRIS2-compliant music players" 
-
-conf_file = 'xchat-mpris-player2.txt'
-
-FILE = inspect.currentframe().f_code.co_filename # I died a bit inside...
-DIR  = os.path.dirname(FILE)
-CONF = os.path.join(DIR, conf_file)
 
 bus = dbus.SessionBus()
 
-player = None
+player = "clementine"
 
 def isPlayerSpecified():
-  if player == None:
-    xchat.prnt("No player specified.")
-    xchat.prnt("Use /player <player name> to specify a default media player.")
-    return False
-  else:
-    return True
-
-def isConfigured():
-  return (os.path.exists(CONF) and open(CONF).read() != '')
-
-def loadConfig():
   global player
-  if isConfigured():
-    player = open(CONF).read()
+  if player:
     return True
   return False
-
-def saveConfig():
-  with open(CONF, 'w') as f:
-    f.write(player)
 
 def status(str):
   xchat.prnt("[%s] %s" % (player, str))
@@ -80,10 +58,8 @@ def getProperty(interface, prop):
 def getSongURLInfo():
   try:
     remote_object = bus.get_object("org.mpris.MediaPlayer2.%s" % (player), "/org/mpris/MediaPlayer2")
-    #iface = dbus.Interface(remote_object, "org.freedesktop.MediaPlayer")
     iface = dbus.Interface(remote_object, "org.freedesktop.DBus.Properties")
 
-    #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
 
     url = ""
@@ -93,22 +69,19 @@ def getSongURLInfo():
       url = ""
 
     return url
-    #else:
-    #  return 0 
+
   except dbus.exceptions.DBusException:
     return False
 
 def getSongInfo():
   try:
     remote_object = bus.get_object("org.mpris.MediaPlayer2.%s" % (player), "/org/mpris/MediaPlayer2")
-    #iface = dbus.Interface(remote_object, "org.freedesktop.MediaPlayer")
     iface = dbus.Interface(remote_object, "org.freedesktop.DBus.Properties")
 
     remote_object_mpris = bus.get_object("org.mpris.%s" % (player), "/Player")
     iface_mpris = dbus.Interface(remote_object_mpris, "org.freedesktop.MediaPlayer")
     data_mpris = iface_mpris.GetMetadata()
     
-    #if iface.IsPlaying():
     data = iface.Get("org.mpris.MediaPlayer2.Player", "Metadata")
 
     artist = ""
@@ -180,7 +153,7 @@ def getSongInfo():
     else:
       s_samplingrate = ""
 
-    # Some nice colors:
+    # Building the actual np line by merging all of the above:
     return (s_artist, s_title, s_album, s_year, s_bitrate, s_samplingrate,
       "\002\00306[\003\002" + str(pos) + "\002\00306/\003\002", str(length) + "\002\00306]\003\002")
     #else:
@@ -188,20 +161,9 @@ def getSongInfo():
   except dbus.exceptions.DBusException:
     return (False, False, False, False, False, False, False, False)
 
-def getPlayerVersion():
-  try:
-    return getProperty("/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Identity")
-  except dbus.exceptions.DBusException:
-    return "DBus Exception"
-
-def mprisPlayerVersion(word, word_eol, userdata):
-  if isPlayerSpecified():
-    xchat.prnt(str(getPlayerVersion()))
-  return xchat.EAT_ALL
-
 def mprisURLInfo(word, word_eol, userdata):
   if isPlayerSpecified():
-    urlinfo = getSongURLInfo()   
+    urlinfo = getSongURLInfo()
     if not urlinfo == False:
       xchat.command("ME is currently streaming from URL: %s" % urlinfo)
     else:
@@ -220,15 +182,8 @@ def mprisNp(word, word_eol, userdata):
 def mprisPlayer(word, word_eol, userdata):
   global player
   if len(word) > 1:
-    oldplayer = player
     player = word[1]
-    if not isPlayerSpecified():
-      pass
-    elif oldplayer != '' and oldplayer != player:
-      xchat.prnt("Media player changed from \"%s\" to \"%s\"" % (oldplayer, player))
-    else:
-      xchat.prnt("Media player set to \"%s\"" % player)
-    saveConfig()
+    xchat.prnt("Media player set to \"%s\"" % player)
     return xchat.EAT_ALL
   else:
     pass
@@ -285,21 +240,19 @@ def mprisNext(word, word_eol, userdata):
     pass
   return xchat.EAT_ALL
 
-xchat.prnt("MPRIS2 now playing script initialized")
-
-if isConfigured():
-  loadConfig()
+if isPlayerSpecified():
   xchat.prnt("Current media player is %s" % player)
 
-xchat.prnt("Use /player <player name> to specify the media player you are using.")
-xchat.prnt("Use /np to send information on the current song to the active channel.")
-xchat.prnt("Also provides: /next, /prev, /play, /pause, /stop, /playerversion")
-xchat.hook_command("PLAYER", mprisPlayer, help="Usage: PLAYER <player name>, set default player.\nOnly needs to be done initially and when changing players.")
-xchat.hook_command("NP",     mprisNp,     help="Usage: NP, send information on current song to the active channel")
-xchat.hook_command("NEXT",   mprisNext,   help="Usage: NEXT, play next song")
-xchat.hook_command("PREV",   mprisPrev,   help="Usage: PREV, play previous song")
-xchat.hook_command("PLAY",   mprisPlay,   help="Usage: PLAY, play the music")
-xchat.hook_command("PAUSE",  mprisPause,  help="Usage: PAUSE, pause the music")
+xchat.hook_command("PLAYER", mprisPlayer, help="Usage: PLAYER <player name>, set default player.\nDefaults to clementine initially, but can be changed (no idea why you should though).")
+xchat.hook_command("NP",     mprisNp,     help="Usage: NP, send information on current song to the active channel.")
+xchat.hook_command("NEXT",   mprisNext,   help="Usage: NEXT, play next song.")
+xchat.hook_command("PREV",   mprisPrev,   help="Usage: PREV, play previous song.")
+xchat.hook_command("PLAY",   mprisPlay,   help="Usage: PLAY, play the music.")
+xchat.hook_command("PAUSE",  mprisPause,  help="Usage: PAUSE, pause the music.")
 xchat.hook_command("STOP",   mprisStop,   help="Usage: STOP, hammer time!")
-xchat.hook_command("PLAYERVERSION", mprisPlayerVersion, help="Usage: PLAYERVERSION, version of the media player you are using")
-xchat.hook_command("URLINFO", mprisURLInfo,   help="Usage: URLINFO, where the streaming audio comes from")
+xchat.hook_command("URLINFO", mprisURLInfo,   help="Usage: URLINFO, where the streaming audio comes from.\nWARNING: shows a local path if the audio is not network-streamed.")
+
+xchat.prnt("MPRIS2 now playing script initialized.")
+xchat.prnt("Use /player <player name> to specify the media player you are using (defaults to clementine).")
+xchat.prnt("Use /np to send information on the current song to the active channel.")
+xchat.prnt("Also provides: /next, /prev, /play, /pause, /stop")
